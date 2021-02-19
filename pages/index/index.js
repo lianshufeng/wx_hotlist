@@ -1,54 +1,105 @@
-// index.js
-// 获取应用实例
-const app = getApp()
-
 Page({
-  data: {
-    motto: 'Hello World',
-    userInfo: {},
-    hasUserInfo: false,
-    canIUse: wx.canIUse('button.open-type.getUserInfo')
+
+  onShareAppMessage() {
+    return {
+      title: '小程序官方组件展示',
+      path: 'page/component/index'
+    }
   },
-  // 事件处理函数
-  bindViewTap() {
+  data: {
+    list: [],
+    theme: 'light'
+  },
+  bindNavigateToWebPage(event) {
+    let url = event.currentTarget.dataset.url;
     wx.navigateTo({
-      url: '../logs/logs'
+      url: '../webpage/webpage?url=' + escape(url)
     })
   },
   onLoad() {
-    if (app.globalData.userInfo) {
-      this.setData({
-        userInfo: app.globalData.userInfo,
-        hasUserInfo: true
-      })
-    } else if (this.data.canIUse) {
-      // 由于 getUserInfo 是网络请求，可能会在 Page.onLoad 之后才返回
-      // 所以此处加入 callback 以防止这种情况
-      app.userInfoReadyCallback = res => {
+    this.setData({
+      theme: wx.getSystemInfoSync().theme || 'light'
+    })
+    if (wx.onThemeChange) {
+      wx.onThemeChange(({
+        theme
+      }) => {
         this.setData({
-          userInfo: res.userInfo,
-          hasUserInfo: true
+          theme
         })
-      }
-    } else {
-      // 在没有 open-type=getUserInfo 版本的兼容处理
-      wx.getUserInfo({
-        success: res => {
-          app.globalData.userInfo = res.userInfo
-          this.setData({
-            userInfo: res.userInfo,
-            hasUserInfo: true
-          })
-        }
       })
     }
+    //加载新闻
+    const apiHost = 'https://api.dzurl.top';
+    this.loadNews('微博', 'weibo', true, apiHost + '/news/weibo', 'https://s.weibo.com/weibo?Refer=new_time&q=')
+      .then(() => {
+        return this.loadNews('百度', 'baidu', false, apiHost + '/news/baidu', 'https://wap.baidu.com/s?word=');
+      })
+      .then(() => {
+        return this.loadNews('知乎', 'zhihu', false, apiHost + '/news/zhihu', 'https://www.zhihu.com/search?type=content&q=');
+      })
+      .then(() => {
+        return this.loadNews('搜狗', 'sougou', false, apiHost + '/news/sogou', 'https://wap.sogou.com/web/searchList.jsp?keyword=');
+      })
+
+
   },
-  getUserInfo(e) {
-    console.log(e)
-    app.globalData.userInfo = e.detail.userInfo
+  loadNews(itemName, itemId, open, url, page) {
+    let me = this;
+    return new Promise((resolve, reject) => {
+      wx.request({
+        url: url, //仅为示例，并非真实的接口地址
+        data: {},
+        header: {
+          'content-type': 'application/json'
+        },
+        success(res) {
+
+          //项
+          let item = {
+            id: itemId,
+            name: itemName,
+            open: open,
+            pages: []
+          }
+
+          //子项
+          res.data.ret.forEach(element => {
+            item.pages.push({
+              title: element.title,
+              url: page + encodeURI(element.title),
+              hot: element.hot ? element.hot : ''
+            })
+          });
+
+          let list = me.data.list;
+          list.push(item)
+
+          //更新数据源
+          me.setData({
+            list: list
+          })
+          resolve()
+        },
+        fail(res) {
+          reject()
+        }
+      })
+
+    });
+  },
+  kindToggle(e) {
+    const id = e.currentTarget.id
+    const list = this.data.list
+    for (let i = 0, len = list.length; i < len; ++i) {
+      if (list[i].id === id) {
+        list[i].open = !list[i].open
+      } else {
+        list[i].open = false
+      }
+    }
     this.setData({
-      userInfo: e.detail.userInfo,
-      hasUserInfo: true
+      list
     })
   }
 })

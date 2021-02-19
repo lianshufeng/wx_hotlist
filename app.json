@@ -1,12 +1,14 @@
 {
   "pages":[
     "pages/index/index",
-    "pages/logs/logs"
+    "pages/webpage/webpage",
+    "pages/logs/logs",
+    "pages/list/list"
   ],
   "window":{
     "backgroundTextStyle":"light",
     "navigationBarBackgroundColor": "#fff",
-    "navigationBarTitleText": "Weixin",
+    "navigationBarTitleText": "热榜",
     "navigationBarTextStyle":"black"
   },
   "style": "v2",
